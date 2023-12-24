@@ -7,6 +7,7 @@ provider "aws" {
 #create vpc
 module "GoGreenVpc" {
     source = "../modules/vpc"
+    key= "gogreenproject"
     region                        = var.region
     project_name                  = var.project_name
     vpc_cidr                      = var.vpc_cidr
