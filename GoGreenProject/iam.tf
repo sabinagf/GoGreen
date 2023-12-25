@@ -143,3 +143,56 @@ resource "aws_iam_role_policy_attachment" "ec2_to_s3_policy_attachment" {
   policy_arn = aws_iam_policy.s3_read_only_policy.arn
 }
 
+resource "aws_iam_user" "admins_with_mfa" {
+  for_each = merge(var.sysadmin_users, var.dbadmin_users)
+
+  name = each.value.name
+  # other attributes...
+}
+
+resource "aws_iam_virtual_mfa_device" "mfa_device" {
+ for_each = aws_iam_user.admins_with_mfa
+virtual_mfa_device_name = each.value.name
+}
+
+# resource "aws_iam_user_mfa" "enable_mfa" {
+#   count    = length(aws_iam_user.admins_with_mfa)
+#   user     = aws_iam_user.admins_with_mfa[count.index].name
+#   serial   = aws_iam_virtual_mfa_device.mfa_device[count.index].serial
+# }
+
+data "aws_caller_identity" "current" {}
+data "aws_iam_user" "admins_with_mfa" {
+  for_each = merge(var.sysadmin_users, var.dbadmin_users)
+
+  user_name = each.value.name
+  # other attributes...
+}
+
+resource "aws_iam_access_key" "mfa_access_key" {
+  for_each  = aws_iam_user.admins_with_mfa
+
+  user     = each.value.name
+  pgp_key  = "keybase:${var.keybase_username}"
+  status   = "Active"
+}
+
+
+# After creating users, use local-exec provisioner to enable MFA
+resource "null_resource" "enable_mfa" {
+  for_each = aws_iam_user.admins_with_mfa
+
+  triggers = {
+    user_name = each.value.name
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      aws iam enable-mfa-device --user-name ${each.value.name} --serial-number arn:aws:iam::${data.aws_caller_identity.current.account_id}:mfa/${each.value.name} --profile your_aws_cli_profile
+      aws iam create-virtual-mfa-device --virtual-mfa-device-name ${each.value.name} --user-name ${each.value.name} --profile your_aws_cli_profile
+      aws iam associate-virtual-mfa-device --user-name ${each.value.name} --serial-number ${data.aws_iam_user.admins_with_mfa[each.value.name].arn} --authentication-code1 123456 --authentication-code2 789012 --profile your_aws_cli_profile
+    EOT
+  }
+
+  depends_on = [aws_iam_user.admins_with_mfa]
+}

@@ -7,8 +7,9 @@ variable "private_app_subnet_az1_cidr" {}
 variable "private_app_subnet_az2_cidr" {}
 variable "private_data_subnet_az1_cidr" {}
 variable "private_data_subnet_az2_cidr" {} 
+variable "key" {}
 
- #declaring the variables
+#VARIABLE FOR USERS
 variable "sysadmin_users" {
   type = map(object({
     name     = string
@@ -60,3 +61,9 @@ default = {
 }
     
   }
+
+variable "keybase_username" {
+  description = "Keybase username for PGP encryption"
+  type        = string
+  default     = "ggrhjksdf"
+}
