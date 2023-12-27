@@ -10,3 +10,7 @@ terraform {
   }
 }
 
+#CREATE AMAZON S3 GLACIER
+resource "aws_glacier_vault" "s3_glacier" {
+  name = "s3_glacier"
+}

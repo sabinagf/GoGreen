@@ -67,3 +67,62 @@ variable "keybase_username" {
   type        = string
   default     = "ggrhjksdf"
 }
+ variable "aws_availability_zones" {
+    type = list(string)
+        default = ["us-east-2a", "us-east-2b"]
+ }
+
+#  variable "key" {
+#   type    = string
+#   default = "default_value"  # Set your default value or leave it empty if not needed
+# }
+
+variable "delete_existing_user" {
+  description = "Set to true to delete the existing IAM user during Terraform apply."
+  type        = bool
+  default     = false
+}
+
+
+#VARIABLES FOR RDS
+variable "prefix" {
+    type =string
+    default = "Gogreen"
+}
+
+
+variable "allocated_storage" {
+    description = "The amount of storage to allocat"
+    type = number 
+    default =20
+    sensitive = true
+  }
+
+  variable "storage_type" {
+    type =string
+    default = "gp2"
+}
+ variable "engine" {
+    description = "The database engine to use"
+    type = string
+    default = "mysql"
+ }
+
+ variable "engine_version" {
+    description = "The engine version to use"
+type = number
+default = "5.7"
+}
+
+variable "instance_class" {
+    description = "The instance class to use"
+    type = string
+    default = "db.t3.micro"
+}
+  
+#   variable "default_tag" {
+#     type = string
+#     description = "A default tag to add to everything"
+#     default = "terraform_aws_rds_secret_manager"
+    
+#   

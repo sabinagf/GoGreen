@@ -28,6 +28,8 @@ resource "aws_iam_user" "dbadmin_users" {
     name = var.dbadmin_users[each.key].name
 }
 
+
+
 #adding dbadmin users to DBAdmin group
 resource "aws_iam_user_group_membership" "dbadmin_group_membership" {
   for_each = var.dbadmin_users
@@ -162,12 +164,18 @@ virtual_mfa_device_name = each.value.name
 # }
 
 data "aws_caller_identity" "current" {}
+
+
 data "aws_iam_user" "admins_with_mfa" {
   for_each = merge(var.sysadmin_users, var.dbadmin_users)
 
   user_name = each.value.name
-  # other attributes...
+  #other attributes...
 }
+
+# data "aws_iam_user" "admins_with_mfa" {
+#   user_name = "dbadmin1"
+# }
 
 resource "aws_iam_access_key" "mfa_access_key" {
   for_each  = aws_iam_user.admins_with_mfa
@@ -178,7 +186,7 @@ resource "aws_iam_access_key" "mfa_access_key" {
 }
 
 
-# After creating users, use local-exec provisioner to enable MFA
+#After creating users, use local-exec provisioner to enable MFA
 resource "null_resource" "enable_mfa" {
   for_each = aws_iam_user.admins_with_mfa
 

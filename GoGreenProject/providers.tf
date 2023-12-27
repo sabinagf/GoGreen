@@ -1,3 +1,10 @@
+#configure aws providers
+provider "aws" {
+  region  = var.region
+}
+
+
+
 # terraform {
 #   cloud {
 #     organization = "terraform_class990"
@@ -14,8 +21,7 @@
 #   }
 # }
 
-# # Configure the AWS Provider
+# Configure the AWS Provider
 # provider "aws" {
 #   region = "us-east-2"
 # }
-
