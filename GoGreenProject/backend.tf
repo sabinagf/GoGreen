@@ -14,3 +14,4 @@ terraform {
 resource "aws_glacier_vault" "s3_glacier" {
   name = "s3_glacier"
 }
+
