@@ -7,8 +7,6 @@ variable "private_subnet_app_tier_1_cidr" {}
 variable "private_subnet_app_tier_2_cidr" {}
 variable "private_subnet_data_tier_1_cidr" {}
 variable "private_subnet_data_tier_2_cidr" {}
-variable "public_subnet_web_tier_1_id" {}
-# variable "key" {} 
 
 #VARIABLE FOR USERS
 variable "sysadmin_users" {
@@ -70,7 +68,7 @@ variable "keybase_username" {
 }
 variable "aws_availability_zones" {
   type    = list(string)
-  default = ["us-east-2a", "us-east-2b"]
+  default = ["us-west-1a", "us-west-2b"]
 }
 
 

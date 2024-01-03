@@ -38,7 +38,9 @@ output "internet_gateway" {
   value = aws_internet_gateway.internet_gateway
 }
 
-
+output "s3_glacier" {
+  value = aws_glacier_vault.s3_glacier.name
+}
 
 
 # output "example" {

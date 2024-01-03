@@ -2,16 +2,6 @@
 provider "aws" {
   region = var.region
 }
-# terraform {
-#   cloud {
-#     organization = "terraform_class990"
-
-#     workspaces {
-#       name = "terraform-aws-security-groups"
-#     }
-#   }
-# }
-
 
 # terraform {
 #   cloud {

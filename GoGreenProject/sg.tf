@@ -137,9 +137,9 @@ resource "aws_security_group" "db_security_group" {
 }
 
 resource "aws_instance" "bastion_az1" {
-  ami           = "ami-0ee4f2271a4df2d7d"
+  ami           = "ami-0082110c417e4726e"
   instance_type = "t3.micro"          # Change to your desired instance type
-  key_name      = "${var.prefix}-key" # Replace with your key pair name
+  key_name      = "Gogreen" # Replace with your key pair name
 
   subnet_id = aws_subnet.web_tier_1.id # Replace with your public subnet 1 ID
 
@@ -152,9 +152,9 @@ resource "aws_instance" "bastion_az1" {
 
 
 resource "aws_instance" "bastion_az2" {
-  ami           = "ami-0ee4f2271a4df2d7d"
+  ami           = "ami-0082110c417e4726e"
   instance_type = "t3.micro"          # Change to your desired instance type
-  key_name      = "${var.prefix}-key" # Replace with your key pair name
+  key_name      = "Gogreen" # Replace with your key pair name
 
   subnet_id = aws_subnet.web_tier_2.id # Replace with your public subnet 1 ID
 

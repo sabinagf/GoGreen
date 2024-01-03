@@ -1,5 +1,5 @@
 #GENERIC VARIABLE
-region                          = "us-east-2"
+region                          = "us-west-1"
 project_name                    = "GoGreen"
 vpc_cidr                        = "10.0.0.0/16"
 public_subnet_web_tier_1_cidr   = "10.0.0.0/24"

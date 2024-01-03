@@ -140,17 +140,17 @@ resource "aws_subnet" "data_tier_2" {
 # }
 #Create ec2 instance
 resource "aws_instance" "web_intance_1" {
-  ami           = "ami-0ee4f2271a4df2d7d"
+  ami           = "ami-0082110c417e4726e"
   instance_type = "t3.micro"
   subnet_id     = aws_subnet.web_tier_1.id
   # availability_zone = aws_subnet.bastion_sg.availability_zone
 
   tags = {
-  Name = "pub ec2 instance 1" }
+  Name = "pub instance1 az1" }
 }
 
 resource "aws_instance" "web_instance_2" {
-  ami = "ami-0ee4f2271a4df2d7d"
+  ami = "ami-0082110c417e4726e"
 
   instance_type = "t3.micro"
   subnet_id     = aws_subnet.web_tier_2.id
@@ -158,35 +158,37 @@ resource "aws_instance" "web_instance_2" {
 
 
   tags = {
-    Name = "pub ec2 instance2"
+    Name = "pub instance az2"
   }
 }
 
 resource "aws_instance" "app_tier_instance1" {
-  ami               = "ami-0ee4f2271a4df2d7d"
+  ami               = "ami-0082110c417e4726e"
   instance_type     = "t3.micro"
   subnet_id         = aws_subnet.app_tier_1.id
   availability_zone = data.aws_availability_zones.availability_zones.names[0]
 
   tags = {
-    Name = "pr.ec2 instance"
+    Name = "pr.ec2 az1"
   }
 }
 
 resource "aws_instance" "app_tier_instance2" {
-  ami               = "ami-0ee4f2271a4df2d7d"
+  ami               = "ami-0082110c417e4726e"
   instance_type     = "t3.micro"
   subnet_id         = aws_subnet.app_tier_2.id
   availability_zone = data.aws_availability_zones.availability_zones.names[1]
 
 
   tags = {
-    Name = "pr.ec2 instance"
+    Name = "pr.ec2 az2"
   }
 }
 
-
-
+# resource "aws_db_subnet_group" "db_subnet_group" {
+#   name       = "db-subnet-group"
+#   subnet_ids = ["aws_subnet.data_tier_1.id", "aws_subnet.data_tier_2.id"]  # Replace with your subnet IDs
+# }
 resource "aws_db_instance" "my_rds_instance" {
   identifier        = "my-database"
   allocated_storage = var.allocated_storage
@@ -201,8 +203,8 @@ resource "aws_db_instance" "my_rds_instance" {
   storage_encrypted   = true
   multi_az            = true
   skip_final_snapshot = true
-
   #Add other RDS instance settings as needed
+  #  db_subnet_group_name = aws_db_subnet_group.db_subnet_group.name
 
   tags = {
     Name = "var.default_tag"
@@ -215,7 +217,7 @@ resource "aws_db_instance" "my_rds_instance" {
 resource "aws_launch_configuration" "launch" {
   name          = "launch-config"
   instance_type = "t2.micro"
-  image_id      = "ami-0ee4f2271a4df2d7d"
+  image_id      = "ami-0082110c417e4726e"
 
 
   # Specify your launch configuration details here
