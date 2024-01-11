@@ -146,7 +146,7 @@ resource "aws_instance" "web_intance_1" {
   # availability_zone = aws_subnet.bastion_sg.availability_zone
 
   tags = {
-  Name = "pub instance1 az1" }
+  Name = "web-instance az1" }
 }
 
 resource "aws_instance" "web_instance_2" {
@@ -158,7 +158,7 @@ resource "aws_instance" "web_instance_2" {
 
 
   tags = {
-    Name = "pub instance az2"
+    Name = "web-instance az2"
   }
 }
 
@@ -169,7 +169,7 @@ resource "aws_instance" "app_tier_instance1" {
   availability_zone = data.aws_availability_zones.availability_zones.names[0]
 
   tags = {
-    Name = "pr.ec2 az1"
+    Name = "app-instance az1"
   }
 }
 
@@ -181,7 +181,7 @@ resource "aws_instance" "app_tier_instance2" {
 
 
   tags = {
-    Name = "pr.ec2 az2"
+    Name = "app-instance az2"
   }
 }
 
@@ -218,6 +218,56 @@ resource "aws_launch_configuration" "launch" {
   name          = "launch-config"
   instance_type = "t2.micro"
   image_id      = "ami-0082110c417e4726e"
+  user_data =  <<-EOF
+  #!/bin/bash -ex
+
+ {
+
+ # Update the system
+
+ sudo dnf -y update
+
+
+
+ # Install MySQL Community Server
+
+ sudo dnf -y install https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm
+
+ sudo dnf -y install mysql-community-server
+
+
+
+ # Start and enable MySQL
+
+ sudo systemctl start mysqld
+
+ sudo systemctl enable mysqld
+
+
+
+ # Install Apache and PHP
+
+ sudo dnf -y install httpd php
+
+
+
+ # Start and enable Apache
+
+ sudo systemctl start httpd
+
+ sudo systemctl enable httpd
+
+ cd /var/www/html
+
+ sudo wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/CUR-TF-200-ACACAD/studentdownload/lab-app.tgz
+
+ sudo tar xvfz lab-app.tgz
+
+ sudo chown apache:root /var/www/html/rds.conf.php
+
+ } &> /var/log/user_data.log
+ EOF
+ 
 
 
   # Specify your launch configuration details here
@@ -244,16 +294,85 @@ resource "aws_autoscaling_group" "auto_scaling" {
 
 #CREATE LOAD_BALANCER
 
+# resource "aws_lb" "load_balancer" {
+#   name               = "load-balancer"
+#   internal           = false
+#   load_balancer_type = "application"
+
+#   enable_deletion_protection = false # Set to true if you want to enable deletion protection
+
+#   subnets = [
+#     aws_subnet.web_tier_1.id,
+#     aws_subnet.web_tier_2.id,
+
+# create application load balancer
 resource "aws_lb" "load_balancer" {
-  name               = "example-lb"
+  name               = "${var.project_name}-alb"
   internal           = false
   load_balancer_type = "application"
+  security_groups    =  [aws_security_group.web_security_group.id]
+  subnets            = [  aws_subnet.web_tier_1.id,
+  aws_subnet.web_tier_2.id]
+  enable_deletion_protection = false
 
-  enable_deletion_protection = false # Set to true if you want to enable deletion protection
+  tags   = {
+    Name = "${var.project_name}-alb"
+  }
+}
 
-  subnets = [
-    aws_subnet.web_tier_1.id,
-    aws_subnet.web_tier_2.id,
+# create target group
+resource "aws_lb_target_group" "alb_target_group" {
+  name        = "${var.project_name}-tg"
+  target_type = "ip"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.vpc.id
+
+  health_check {
+    enabled             = true
+    interval            = 300
+    path                = "/"
+    timeout             = 60
+    matcher             = 200
+    healthy_threshold   = 5
+    unhealthy_threshold = 5
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# create a listener on port 80 with redirect action
+resource "aws_lb_listener" "alb_http_listener" {
+  load_balancer_arn = aws_lb.load_balancer.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = 443
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
+# create a listener on port 443 with forward action
+resource "aws_lb_listener" "alb_https_listener" {
+  load_balancer_arn  = aws_lb.load_balancer.arn
+  port               = 443
+  protocol           = "HTTPS"
+  ssl_policy         = "ELBSecurityPolicy-2016-08"
+  certificate_arn    = aws_acm_certificate.acm_certificate.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.alb_target_group.arn
+  }
+}
 
     # Replace with your private subnet 1 ID
 
@@ -262,16 +381,16 @@ resource "aws_lb" "load_balancer" {
     # aws_subnet.private_data_subnet_az1.id,
     # aws_subnet.private_data_subnet_az2.id,
     # Replace with your private subnet 2 ID
-  ]
+  
 
-  enable_cross_zone_load_balancing = true
+#   enable_cross_zone_load_balancing = true
 
-  enable_http2 = true # Enable if desired
+#   enable_http2 = true # Enable if desired
 
-  tags = {
-    Name = "load_balancer"
-  }
-}
+#   tags = {
+#     Name = "load_balancer"
+#   }
+# }
 #CREATE ELASTIC_IP(EIP) 
 # resource "aws_eip" "elastic_ip1" {
 #   instance = aws_instance.instance_az1.id # Specify the ID of the associated EC2 instance, if any
@@ -292,3 +411,4 @@ resource "aws_lb" "load_balancer" {
 # }
 
 
+ data "aws_caller_identity" "current" {}

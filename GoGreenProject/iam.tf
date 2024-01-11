@@ -63,41 +63,32 @@ resource "aws_iam_user_group_membership" "monitor_group_membership" {
 
 #GIVING PERMISSIONS FOR USERS
 
-# Attach the AdministratorAccess policy to each user
-resource "aws_iam_user_policy_attachment" "sysadmin_admin_policy_attachment" {
-  for_each = var.sysadmin_users
-
-  user       = aws_iam_user.sysadmin_users[each.key].name
+# Attach the AdministratorAccess policy to sysadmin group
+resource "aws_iam_group_policy_attachment" "sysadmin_admin_policy_attachment" {
+  group       = aws_iam_group.sysadmin_group.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
-#Attach the AmazonRDSFUllAccess policy to each user
+#Attach the AmazonRDSFUllAccess policy to dbadmin group
 
-resource "aws_iam_user_policy_attachment" "dbadmin_rds_policy_attachment" {
-  for_each = var.dbadmin_users
-
-  user       = aws_iam_user.dbadmin_users[each.key].name
+resource "aws_iam_group_policy_attachment" "dbadmin_rds_policy_attachment" {
+  group = aws_iam_group.dbadmin_group.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
 }
 
-# #Attach the AmazonS3ReadOnlyAccess, Amazon RDSReadonlyAccess, AmazonEC2ReadOnlyAccess to each user
-resource "aws_iam_user_policy_attachment" "monitor_policy_attachment_s3" {
-  for_each = var.monitor_users
-
-  user       = aws_iam_user.monitor_users[each.key].name
+# #Attach the AmazonS3ReadOnlyAccess, Amazon RDSReadonlyAccess, AmazonEC2ReadOnlyAccess to monitor group
+resource "aws_iam_group_policy_attachment" "monitor_policy_attachment_s3" {
+  group      = aws_iam_group.monitor_group.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
 }
 
-resource "aws_iam_user_policy_attachment" "monitor_policy_attachment_rds" {
-  for_each = var.monitor_users
-
-  user       = aws_iam_user.monitor_users[each.key].name
+resource "aws_iam_group_policy_attachment" "monitor_policy_attachment_rds" {
+  group      = aws_iam_group.monitor_group.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"
 }
 
-resource "aws_iam_user_policy_attachment" "monitor_policy_attachment_ec2" {
-  for_each   = var.monitor_users
-  user       = aws_iam_user.monitor_users[each.key].name
+resource "aws_iam_group_policy_attachment" "monitor_policy_attachment_ec2" {
+   group      = aws_iam_group.monitor_group.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
 }
 
@@ -145,51 +136,43 @@ resource "aws_iam_role_policy_attachment" "ec2_to_s3_policy_attachment" {
   policy_arn = aws_iam_policy.s3_read_only_policy.arn
 }
 
-# resource "aws_iam_user" "admins_with_mfa" {
-#   for_each = merge(var.sysadmin_users, var.dbadmin_users)
-#   name     = each.value.name
-#   # other attributes.. .
-# }
-
-# resource "aws_iam_virtual_mfa_device" "mfa_device" {
-#   for_each                = aws_iam_user.admins_with_mfa
-#   virtual_mfa_device_name = each.value.name
-# }
-
-# resource "aws_iam_user_mfa" "enable_mfa" {
-#   count    = length(aws_iam_user.admins_with_mfa)
-#   user     = aws_iam_user.admins_with_mfa[count.index].name
-#   serial   = aws_iam_virtual_mfa_device.mfa_device[count.index].serial
-# }
-
-data "aws_caller_identity" "current" {}
 
 
-
-# resource "aws_iam_access_key" "mfa_access_key" {
-#   for_each = aws_iam_user.admins_with_mfa
-
-#   user    = each.value.name
-#   pgp_key = "keybase:${var.keybase_username}"
-#   status  = "Active"
-# }
+#Creating the passwords
+resource "aws_iam_user_login_profile" "passwords" {
+  for_each = var.sysadmin_users
+  user     = aws_iam_user.sysadmin_users[each.key].name
+  password_length = 8
+}
 
 
-# #After creating users, use local-exec provisioner to enable MFA
-# resource "null_resource" "enable_mfa" {
-#   for_each = aws_iam_user.admins_with_mfa
+resource "aws_iam_user_login_profile" "passwordd" {
+  for_each = var.dbadmin_users
+  user     = aws_iam_user.dbadmin_users[each.key].name
+  
+  password_length = 8
+}
 
-#   triggers = {
-#     user_name = each.value.name
-#   }
+resource "aws_iam_user_login_profile" "passwordm" {
+  for_each = var.monitor_users
+  user     = aws_iam_user.monitor_users[each.key].name
+  
+  password_length = 8
+}
 
-#   provisioner "local-exec" {
-#     command = <<-EOT
-#       aws iam enable-mfa-device --user-name ${each.value.name} --serial-number arn:aws:iam::${data.aws_caller_identity.current.account_id}:mfa/${each.value.name} --profile your_aws_cli_profile
-#       aws iam create-virtual-mfa-device --virtual-mfa-device-name ${each.value.name} --user-name ${each.value.name} --profile your_aws_cli_profile
-#       aws iam associate-virtual-mfa-device --user-name ${each.value.name} --serial-number ${data.aws_iam_user.admins_with_mfa[each.value.name].arn} --authentication-code1 123456 --authentication-code2 789012 --profile your_aws_cli_profile
-#     EOT
-#   }
+#Create access key for user
 
-#   depends_on = [aws_iam_user.admins_with_mfa]
-# }
+resource "aws_iam_access_key" "sysad_access_key" {
+    for_each = var.sysadmin_users
+  user     = aws_iam_user.sysadmin_users[each.key].name
+}
+
+resource "aws_iam_access_key" "dbad_access_key" {
+     for_each = var.dbadmin_users
+  user     = aws_iam_user.dbadmin_users[each.key].name
+}
+
+resource "aws_iam_access_key" "monit_access_key" {
+     for_each = var.monitor_users
+  user     = aws_iam_user.monitor_users[each.key].name
+}

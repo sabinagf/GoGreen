@@ -68,7 +68,7 @@ variable "keybase_username" {
 }
 variable "aws_availability_zones" {
   type    = list(string)
-  default = ["us-west-1a", "us-west-2b"]
+  default = ["us-west-1a", "us-west-1b"]
 }
 
 
@@ -125,3 +125,18 @@ variable "instance_class" {
 #     type = string
 #     description = "A default tag to add to everything"
 #     default = "terraform_aws_rds_secret_manager"
+
+#route 53 variable
+variable "domain_name" {
+  default = "ziyotekgogreen.net"
+  description = "domain name"
+  type =string 
+  
+}
+
+variable "record_name" {
+  default = "www.ziyotekgogreen.net"
+  description = "sub domain name"
+  type =string
+  
+}
